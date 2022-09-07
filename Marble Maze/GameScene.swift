@@ -22,6 +22,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scoreLabel: SKLabelNode!
     var isGameOver = false
     
+    var level = 1 {
+        didSet {
+            if level > 2 {
+                level = 1
+            }
+        }
+    }
+    
     var score = 0 {
         didSet {
             scoreLabel.text = "Score: \(score)"
@@ -33,6 +41,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         background.position = CGPoint(x: 512, y: 384)
         background.blendMode = .replace
         background.zPosition = -1
+        background.name = "background"
         addChild(background)
         
         scoreLabel = SKLabelNode(fontNamed: "Chalkduster")
@@ -42,7 +51,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         scoreLabel.zPosition = 2
         addChild(scoreLabel)
         
-        loadLevel()
+        loadLevel(number: level)
         createPlayer()
         
         physicsWorld.gravity = .zero
@@ -52,9 +61,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         motionManager?.startAccelerometerUpdates()
     }
     
-    func readTxt() -> [String] {
-        guard let levelURL = Bundle.main.url(forResource: "level1", withExtension: "txt") else { fatalError("Could not find level1.txt in the app bundle.") }
-        guard let levelString = try? String(contentsOf: levelURL) else { fatalError("Could not find level1.txt in the app bundle.") }
+    func readTxt(_ number: Int) -> [String] {
+        guard let levelURL = Bundle.main.url(forResource: "level\(number)", withExtension: "txt") else { fatalError("Could not find level\(number).txt in the app bundle.") }
+        guard let levelString = try? String(contentsOf: levelURL) else { fatalError("Could not find level\(number).txt in the app bundle.") }
         let lines = levelString.components(separatedBy: "\n")
         
         return lines
@@ -122,8 +131,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
-    func loadLevel() {
-        let lines = readTxt()
+    func loadLevel(number: Int) {
+        let lines = readTxt(number)
         
         for (row, line) in lines.reversed().enumerated() {
             for (column, letter) in line.enumerated() {
@@ -208,7 +217,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             node.removeFromParent()
             score += 1
         } else if node.name == "finish" {
+            eraseLevel()
+            level += 1
+            createPlayer()
+            loadLevel(number: level)
+        }
+    }
+    
+    func eraseLevel() {
+        for case let child as SKSpriteNode in children {
+            if child.name == "background" {
+                continue
+            }
             
+            child.removeFromParent()
         }
     }
 }
